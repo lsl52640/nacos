@@ -7,6 +7,13 @@ const API_GENERAL_ERROR_MESSAGE = 'Request error, please try again later!';
 const request = () => {
   const instance = axios.create();
 
+  instance.interceptors.request.use((config) => {
+        config.headers.Authorization = localStorage.getItem('token');
+        return config;
+      }, (error) => {
+        return Promise.reject(error);
+      });
+
   instance.interceptors.response.use(
     response => {
       const { success, resultCode, resultMessage = API_GENERAL_ERROR_MESSAGE } = response.data;
