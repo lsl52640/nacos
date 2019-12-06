@@ -15,8 +15,12 @@
  */
 package com.alibaba.nacos.console.filter;
 
+import com.alibaba.nacos.client.config.impl.SpasAdapter;
+import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.console.config.WebSecurityConfig;
+import com.alibaba.nacos.console.security.CustomUserDetails;
 import com.alibaba.nacos.console.utils.JwtTokenUtils;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
@@ -27,6 +31,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * jwt auth token filter
@@ -38,6 +43,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     private static final String TOKEN_PREFIX = "Bearer ";
 
     private JwtTokenUtils tokenProvider;
+    private Map<String, String> appKey;
 
     public JwtAuthenticationTokenFilter(JwtTokenUtils tokenProvider) {
         this.tokenProvider = tokenProvider;
@@ -59,7 +65,19 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
-
+        String signature = request.getHeader("Spas-Signature");
+        if (StringUtils.hasText(signature)) {
+            String data = request.getHeader("Timestamp");
+            String app = request.getHeader("Spas-AccessKey");
+            String s = SpasAdapter.signWithhmacSHA1Encrypt(data, tokenProvider.getKey(app));
+            if (s.equals(signature)) {
+                User user = new User();
+                user.setUsername("admin");
+                CustomUserDetails customUserDetails = new CustomUserDetails(user);
+                Authentication authentication = new UsernamePasswordAuthenticationToken(customUserDetails, "");
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        }
         chain.doFilter(request, response);
     }
 

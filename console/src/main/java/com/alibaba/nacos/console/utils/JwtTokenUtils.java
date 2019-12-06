@@ -18,16 +18,21 @@ package com.alibaba.nacos.console.utils;
 import io.jsonwebtoken.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.codec.Base64;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -51,11 +56,19 @@ public class JwtTokenUtils {
      * Token validity time(ms)
      */
     private long tokenValidityInMilliseconds;
+    SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
+    @Value("#{${nacos-key}}")
+    private Map<String, String> appKey;
+
 
     @PostConstruct
     public void init() {
         this.secretKey = "SecretKey012345678901234567890123456789012345678901234567890123456789";
         this.tokenValidityInMilliseconds = 1000 * 60 * 30L;
+    }
+
+    public String getKey(String app){
+        return appKey.get(app);
     }
 
     /**
@@ -79,11 +92,11 @@ public class JwtTokenUtils {
          * create token
          */
         return Jwts.builder()
-            .setSubject(authentication.getName())
-            .claim(AUTHORITIES_KEY, "")
-            .setExpiration(validity)
-            .signWith(SignatureAlgorithm.HS256, secretKey)
-            .compact();
+                .setSubject(authentication.getName())
+                .claim(AUTHORITIES_KEY, "")
+                .setExpiration(validity)
+                .signWith(generalKey(), signatureAlgorithm)
+                .compact();
     }
 
     /**
@@ -97,9 +110,9 @@ public class JwtTokenUtils {
          *  parse the payload of token
          */
         Claims claims = Jwts.parser()
-            .setSigningKey(secretKey)
-            .parseClaimsJws(token)
-            .getBody();
+                .setSigningKey(secretKey)
+                .parseClaimsJws(token)
+                .getBody();
 
         List<GrantedAuthority> authorities = AuthorityUtils.commaSeparatedStringToAuthorityList((String) claims.get(AUTHORITIES_KEY));
 
@@ -136,4 +149,10 @@ public class JwtTokenUtils {
         }
         return false;
     }
+
+    public SecretKey generalKey() {
+        SecretKey key = new SecretKeySpec(secretKey.getBytes(), 0, secretKey.length(), "AES");
+        return key;
+    }
+
 }
