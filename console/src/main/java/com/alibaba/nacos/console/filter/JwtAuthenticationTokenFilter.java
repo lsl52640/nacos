@@ -31,7 +31,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * jwt auth token filter
@@ -43,7 +42,6 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     private static final String TOKEN_PREFIX = "Bearer ";
 
     private JwtTokenUtils tokenProvider;
-    private Map<String, String> appKey;
 
     public JwtAuthenticationTokenFilter(JwtTokenUtils tokenProvider) {
         this.tokenProvider = tokenProvider;
