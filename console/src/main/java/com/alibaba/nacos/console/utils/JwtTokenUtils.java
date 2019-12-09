@@ -16,6 +16,9 @@
 package com.alibaba.nacos.console.utils;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.Encoders;
+import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -63,7 +66,7 @@ public class JwtTokenUtils {
 
     @PostConstruct
     public void init() {
-        this.secretKey = "SecretKey012345678901234567890123456789012345678901234567890123456789";
+        this.secretKey = "U2VjcmV0S2V5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5";
         this.tokenValidityInMilliseconds = 1000 * 60 * 30L;
     }
 
@@ -95,7 +98,7 @@ public class JwtTokenUtils {
                 .setSubject(authentication.getName())
                 .claim(AUTHORITIES_KEY, "")
                 .setExpiration(validity)
-                .signWith(generalKey(), signatureAlgorithm)
+                .signWith(generalKey())
                 .compact();
     }
 
@@ -151,8 +154,11 @@ public class JwtTokenUtils {
     }
 
     public SecretKey generalKey() {
-        SecretKey key = new SecretKeySpec(secretKey.getBytes(), 0, secretKey.length(), "AES");
-        return key;
+        byte[] encodedKey = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(encodedKey);
     }
 
+    public static void main(String[] args) {
+        System.err.println(Encoders.BASE64.encode("SecretKey012345678901234567890123456789012345678901234567890123456789".getBytes()));
+    }
 }
